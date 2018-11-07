@@ -27,25 +27,38 @@ def extract_movies(dom):
     - Runtime (only a number!)
     """
     movies = []
+    # every item in "lister-item-content" is a separate movie
     for movie in dom(class_="lister-item-content"):
-        title = movie.find(class_="lister-item-header")
-        name = title.find('a').string
+        header = movie.find(class_="lister-item-header")
+        # get name of movie
+        name = header.find('a').string
 
-        year = title('span')[1].string.split()[-1].strip('()')
+        # get year of release
+        year = header('span')[1].string.split()[-1].strip('()')
 
+        # get length of movie
         runtime = movie.find(class_="runtime").string.rstrip(' min')
+
+        # get rating of movie
         rating = movie.find('strong').string
 
+
         actorlist = []
+        # All actors are links in a <p>
         for p in movie('p'):
             for a in p('a'):
                 actorlist.append(a.string)
+
+        # remove the link that does not belong to an actor
         try:
             actorlist.remove('See full summary')
         except ValueError:
             pass
+
+        # turn actorlist to csv-format
         actors = ', '.join(actorlist)
 
+        # add parsed details of movie to movielist
         movies.append([name, rating, year, actors, runtime])
 
     return movies
@@ -60,7 +73,6 @@ def save_csv(outfile, movies):
 
     for movie in movies:
         writer.writerow(movie)
-
 
 def simple_get(url):
     """

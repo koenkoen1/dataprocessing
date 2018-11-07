@@ -17,12 +17,19 @@ END_YEAR = 2018
 data_dict = {str(key): [] for key in range(START_YEAR, END_YEAR)}
 
 def parse_csv():
+    """
+    take the year and rating from every movie from a CSV file and group them by
+    year
+    """
     with open('movies.csv', 'r') as csvfile:
         reader = csv.DictReader(csvfile)
         for row in reader:
             data_dict[row['Year']].append(int(10 * float(row['Rating'])))
 
 def plotter():
+    """
+    calculate average ratings per year and plot them
+    """
     avgval = []
     years = []
     for year in data_dict:
@@ -32,7 +39,7 @@ def plotter():
         total /= len(data_dict[year])
         avgval.append(total / 10)
         years.append(year)
-    print(avgval)
+        
     plt.plot(years, avgval, 'r')
     plt.title('Average ratings of movies per year')
     plt.show()
