@@ -64,10 +64,6 @@ def remove_outliers(stat):
         for head in heads:
             del data_dict[head][index]
 
-    # new outliers may be detected after previous removal
-    if outlier:
-        remove_outliers(stat)
-
 def central_tendency(df):
     """
     calculates values relevant to the central tendency and
