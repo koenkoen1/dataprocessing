@@ -109,7 +109,7 @@ def to_json(df):
         data[values[0]] = temp_dict
 
     with open('data.json', 'w') as outfile:
-        json.dump(data, outfile)
+        json.dump(data, outfile, indent=4)
 
 if __name__ == "__main__":
     parse()
