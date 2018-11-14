@@ -76,6 +76,8 @@ def central_tendency(df):
     values = df.values
     plt.hist(values, bins=30)
     plt.title('GDP ($ per capita) dollars')
+    plt.xlabel('dollars')
+    plt.ylabel('countries')
     plt.show()
 
 def five_number_summary(df):
@@ -92,6 +94,7 @@ def five_number_summary(df):
     values = df.values
     plt.boxplot(values)
     plt.title('Infant mortality (per 1000 births)')
+    plt.xticks([])
     plt.show()
 
 def to_json(df):
