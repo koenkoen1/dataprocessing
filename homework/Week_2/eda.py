@@ -74,7 +74,8 @@ def central_tendency(df):
     print(f"Mode: {df.mode()}")
 
     values = df.values
-    plt.hist(values, bins=15)
+    plt.hist(values, bins=30)
+    plt.title('GDP ($ per capita) dollars')
     plt.show()
 
 def five_number_summary(df):
@@ -84,12 +85,13 @@ def five_number_summary(df):
     """
     print(f"Minimum: {df.min()}")
     print(f"First Quartile: {df.quantile(0.25)}")
-    print(f"Mean: {df.mean()}")
+    print(f"Median: {df.median()}")
     print(f"Third Quartile: {df.quantile(0.75)}")
     print(f"Maximum: {df.max()}")
 
     values = df.values
     plt.boxplot(values)
+    plt.title('Infant mortality (per 1000 births)')
     plt.show()
 
 def to_json(df):
