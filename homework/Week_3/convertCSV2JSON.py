@@ -5,19 +5,18 @@
 import csv
 import json
 
-data_dict = {}
-
 def csv_to_json(filename):
     """
     parses csv file and converts to json
     """
+    data_dict = {}
     with open(f"{filename}.csv", 'r') as csvfile:
         reader = csv.DictReader(csvfile)
 
         # the first field is assumed to be a unique identifier
         field = reader.fieldnames[0]
 
-        # parse csvfile
+        # parse csvfile to json format
         for row in reader:
             tempdict = {}
             for key in row:
