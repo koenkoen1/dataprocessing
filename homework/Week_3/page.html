@@ -12,63 +12,81 @@ Purpose: existance
     <title>divorceRate</title>
   </head>
   <body>
-    Dit is een grafiek
+    <b>Divorce rate for the total population</b>
     <script>
       let fileName = "divorce_rate.json";
       let txtFile = new XMLHttpRequest();
       txtFile.onreadystatechange = function() {
         if (txtFile.readyState === 4 && txtFile.status == 200) {
-          let data = JSON.parse(txtFile.responseText);
-          const years = Object.keys(data);
-          let dataValues = []
-          years.forEach(function(element) {
-            console.log(element, data[element].Value)
-            dataValues.push(data[element].Value)
-          });
-
-          max = Math.max(...dataValues)
-          min = Math.min(...dataValues)
-
-          var stepSize = 1;
-        	var columnSize = 50;
-        	var rowSize = 50;
-        	var margin = 10;
-
-          var canvas = document.getElementById('myCanvas');
-          var ctx = canvas.getContext('2d');
-          canvas.height = 500;
-          canvas.width = 1000;
-          yScale = (canvas.height - 2 * margin) / (max - min);
-          xScale = (canvas.width - rowSize) / years.length;
-
-          for (i=0;i<=years.length;i=i+2) {
-        		let x = i * xScale + rowSize;
-        		ctx.fillText(years[i], x - margin, canvas.height);
-        		ctx.moveTo(x, margin);
-        		ctx.lineTo(x, canvas.height - margin);
-        	}
-
-          var count =  0;
-        	for (scale=min;scale<=max;scale = scale + stepSize) {
-        		var y = canvas.height - margin - (yScale * count * stepSize);
-        		ctx.fillText(scale, margin,y + margin / 2);
-        		ctx.moveTo(rowSize,y)
-        		ctx.lineTo(canvas.width - xScale,y)
-        		count++;
-        	}
-          ctx.stroke()
-
-          ctx.translate(rowSize,canvas.height - margin + min * yScale);
-        	ctx.beginPath();
-        	ctx.moveTo(0, -dataValues[0] * yScale);
-        	for (i=0;i<years.length;i++) {
-        		ctx.lineTo(i * xScale, -dataValues[i] * yScale);
-        	}
-        	ctx.stroke();
+          let data = parser(txtFile)
+          graph(data)
         }
       }
       txtFile.open("GET", fileName);
       txtFile.send();
+
+      function parser(textFile) {
+        let data = JSON.parse(textFile.responseText);
+        const years = Object.keys(data);
+        let dataValues = []
+        years.forEach(function(element) {
+          dataValues.push(data[element].Value)
+        })
+        return [years, dataValues]
+      }
+
+      function graph(data) {
+        let years = data[0]
+        let dataValues = data[1]
+
+        let max = Math.ceil(Math.max(...dataValues))
+        let min = Math.floor(Math.min(...dataValues))
+        let stepSize = 1;
+      	let columnSize = 50;
+      	let rowSize = 50;
+      	let margin = 10;
+
+        let canvas = document.getElementById('myCanvas');
+        let ctx = canvas.getContext('2d');
+        canvas.height = 500;
+        canvas.width = 1000;
+        let yScale = (canvas.height - 3 * margin) / (max - min);
+        let xScale = (canvas.width - rowSize) / years.length;
+
+        for (i=0;i<=years.length;i=i+2) {
+      		let x = i * xScale + rowSize;
+      		ctx.fillText(years[i], x - margin, canvas.height - margin);
+      		ctx.moveTo(x, margin);
+      		ctx.lineTo(x, canvas.height - 2 * margin);
+      	}
+
+        let count =  0;
+      	for (scale=min;scale<=max;scale = scale + stepSize) {
+      		let y = canvas.height - 2 * margin - (yScale * count * stepSize);
+      		ctx.fillText(scale, 3 * margin,y + margin / 2);
+      		ctx.moveTo(rowSize,y)
+      		ctx.lineTo(canvas.width - xScale,y)
+      		count++;
+      	}
+        ctx.stroke();
+
+        ctx.font = "bold 11px sans-serif";
+        ctx.rotate(-Math.PI/2);
+        ctx.textAlign = "left";
+        ctx.fillText("Divorce rate", -4 * columnSize, margin);
+        ctx.fillText("(per 1000 marriages and civil unions)", -4 * columnSize, 2 * margin)
+        ctx.rotate(Math.PI/2);
+        ctx.fillText("Year", canvas.width - columnSize, canvas.height)
+        ctx.stroke();
+
+        ctx.translate(rowSize,canvas.height - 2 * margin + min * yScale);
+      	ctx.beginPath();
+      	ctx.moveTo(0, -dataValues[0] * yScale);
+      	for (i=0;i<years.length;i++) {
+      		ctx.lineTo(i * xScale, -dataValues[i] * yScale);
+      	}
+      	ctx.stroke();
+      }
     </script>
     <canvas id="myCanvas">
     </canvas>
