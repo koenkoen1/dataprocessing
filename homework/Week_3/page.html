@@ -1,14 +1,10 @@
 <!-- Koen Dielhoff, 11269693
-Purpose: existance
+This page contains a script that creates a graph from the divorce_rate.json file
 -->
 
 <!DOCTYPE html>
 <html>
   <head>
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
-    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js" integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49" crossorigin="anonymous"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js" integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy" crossorigin="anonymous"></script>
     <title>divorceRate</title>
   </head>
   <body>
@@ -26,19 +22,21 @@ Purpose: existance
       txtFile.send();
 
       function parser(textFile) {
+        // obtain keys and actual values
         let data = JSON.parse(textFile.responseText);
-        const years = Object.keys(data);
+        const keys = Object.keys(data);
         let dataValues = []
-        years.forEach(function(element) {
+        keys.forEach(function(element) {
           dataValues.push(data[element].Value)
         })
-        return [years, dataValues]
+        return [keys, dataValues]
       }
 
       function graph(data) {
         let years = data[0]
         let dataValues = data[1]
 
+        // important values
         let max = Math.ceil(Math.max(...dataValues))
         let min = Math.floor(Math.min(...dataValues))
         let stepSize = 1;
@@ -46,13 +44,15 @@ Purpose: existance
       	let rowSize = 50;
       	let margin = 10;
 
+        // initialize canvas
         let canvas = document.getElementById('myCanvas');
         let ctx = canvas.getContext('2d');
-        canvas.height = 500;
-        canvas.width = 1000;
+
+        // transforming equations
         let yScale = (canvas.height - 3 * margin) / (max - min);
         let xScale = (canvas.width - rowSize) / years.length;
 
+        // add vertical lines and x-labels
         for (i=0;i<=years.length;i=i+2) {
       		let x = i * xScale + rowSize;
       		ctx.fillText(years[i], x - margin, canvas.height - margin);
@@ -60,6 +60,7 @@ Purpose: existance
       		ctx.lineTo(x, canvas.height - 2 * margin);
       	}
 
+        // add horizontal lines and y-labels
         let count =  0;
       	for (scale=min;scale<=max;scale = scale + stepSize) {
       		let y = canvas.height - 2 * margin - (yScale * count * stepSize);
@@ -68,8 +69,19 @@ Purpose: existance
       		ctx.lineTo(canvas.width - xScale,y)
       		count++;
       	}
+        // make lines transparent
+        ctx.globalAlpha = 0.1
+        ctx.stroke();
+        ctx.globalAlpha = 1
+
+        // solid lines
+        ctx.beginPath()
+        ctx.moveTo(canvas.width - xScale, canvas.height - 2 * margin)
+        ctx.lineTo(rowSize, canvas.height - 2 * margin)
+        ctx.lineTo(rowSize, margin)
         ctx.stroke();
 
+        // add labeltext
         ctx.font = "bold 11px sans-serif";
         ctx.rotate(-Math.PI/2);
         ctx.textAlign = "left";
@@ -77,8 +89,8 @@ Purpose: existance
         ctx.fillText("(per 1000 marriages and civil unions)", -4 * columnSize, 2 * margin)
         ctx.rotate(Math.PI/2);
         ctx.fillText("Year", canvas.width - columnSize, canvas.height)
-        ctx.stroke();
 
+        // plot data
         ctx.translate(rowSize,canvas.height - 2 * margin + min * yScale);
       	ctx.beginPath();
       	ctx.moveTo(0, -dataValues[0] * yScale);
@@ -88,8 +100,7 @@ Purpose: existance
       	ctx.stroke();
       }
     </script>
-    <canvas id="myCanvas">
+    <canvas id="myCanvas" width="1000" height="500">
     </canvas>
-
   </body>
 </html>
