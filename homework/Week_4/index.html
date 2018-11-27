@@ -6,46 +6,90 @@ This page exists
 <html lang="en">
   <head>
     <meta charset="utf-8">
-    <script type="text/javascript" src="d3/d3.v5.js"></script>
+    <script src="https://d3js.org/d3.v5.min.js"></script>
+    <script src="http://labratrevenge.com/d3-tip/javascripts/d3.tip.v0.6.3.js"></script>
+    <style>
+      rect {fill: green}
+      rect:hover {fill: lightgreen;}
+      div.tooltip {
+        position: absolute;
+        text-align: center;
+        width: 60px;
+        height: 36px;
+        background: yellow;
+        pointer-events: none;
+      }
+    </style>
   </head>
   <body>
     <script type="text/javascript">
+      // adds titles and descriptions of page
       d3.select("head").append("title").text("D3 test");
       d3.select("body").append("h1").text("Renewable energy supply");
-      d3.select("body").append("h2").text("Koen Dielhoff, 11269693");
-      d3.select("body").append("h3").text("this graph shows the amount of renewable energy in units of KTOE(kilotonnes of oil equivalents) for OECD countries in 2016.");
+      d3.select("body").append("h5").text("Koen Dielhoff, 11269693");
+      d3.select("body").append("p").text("this graph shows the amount of renewable energy in units of KTOE(kilotonnes of oil equivalents) for OECD countries in 2016.");
 
-      // Width and height
-      var w = 1200;
-      var h = 400;
-      var barPadding = 5;
-      var margin = 20;
+      // width and height constants
+      const w = 1500;
+      const h = 400;
+      const barPadding = 5;
+      const margin = 20;
 
+      // adds svg
       var svg = d3.select("body")
             .append("svg")
             .attr("width", w)
             .attr("height", h);
 
+      // gets data
       d3.json("data.json").then(function(data){
         goodData = parser(data)
-        console.log(goodData)
-        var max = Math.max(...goodData[1])
-        var barWidth = (w - 2 * margin) / goodData[0].length
-        console.log(max)
+
+        // determine bar width
+        const barWidth = (w - 2 * margin) / goodData[0].length
+
+        // create scales for the data
+        var yScale = d3.scaleLinear()
+                  .domain([0, Math.max(...goodData[1])])
+                  .range([h - margin, 0])
+        var xScale = d3.scaleLinear()
+                  .domain([0, goodData[0].length])
+                  .range([margin, w - margin])
+
+        // initialize tooltip
+        var div = d3.select("body")
+            	.append("div")
+            	.attr("class", "tooltip")
+            	.style("opacity", 0);
+
+        // make bargraph in svg from data
         rects = svg.selectAll("rect")
             .data(goodData[1])
             .enter()
             .append("rect")
-        rects.attr("x", function(d, i) {
-              return i * barWidth + margin;
-            })
-            .attr("y", function(d){
-              return (h - margin) * (1 - d / max);
-            })
+        rects.attr("x", function(d, i) { return xScale(i); })
+            .attr("y", function(d){ return yScale(d) - margin; })
             .attr("width", barWidth - barPadding)
             .attr("height", function(d){
-              return d / max * (h - margin);
-            });
+              return h - yScale(d);
+            })
+
+            // makes tooltips work
+            .on("mouseover", function(d) {
+        			div.transition()
+        				  .duration(200)
+        				  .style("opacity", .9);
+              div	.html("KTOE:<br/>" + d)
+                  .style("left", (d3.event.pageX) + "px")
+                  .style("top", (d3.event.pageY - 28) + "px");
+        			})
+            .on("mouseout", function(d) {
+              div.transition()
+                  .duration(500)
+                  .style("opacity", 0);
+              });
+
+        // adds labels to bars
         texts = svg.selectAll("text")
             .data(goodData[0])
             .enter()
@@ -54,15 +98,21 @@ This page exists
               return d;
             });
         texts.attr("x", function(d, i) {
-            return i * barWidth + margin + 0.5 * (barWidth - barPadding);
+            return xScale(i) + 0.5 * (barWidth - barPadding);
           })
           .attr("y", h)
           .attr("text-anchor", "middle")
 
+        // adds y-axis
+        yAxis = d3.axisLeft(yScale)
+        svg.append("g")
+            .attr("class", "axis")
+            .attr("transform", "translate(" + margin + ",0)")
+            .call(yAxis);
       });
 
       function parser(data) {
-        // obtain keys and actual values
+        // obtain keys and actual values from json responsetext
         let keys = Object.keys(data);
         let dataValues = []
         let valueless = []
