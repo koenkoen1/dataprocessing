@@ -1,0 +1,85 @@
+<!-- Koen Dielhoff, 11269693
+This page exists
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <script type="text/javascript" src="d3/d3.v5.js"></script>
+  </head>
+  <body>
+    <script type="text/javascript">
+      d3.select("head").append("title").text("D3 test");
+      d3.select("body").append("h1").text("Renewable energy supply");
+      d3.select("body").append("h2").text("Koen Dielhoff, 11269693");
+      d3.select("body").append("h3").text("this graph shows the amount of renewable energy in units of KTOE(kilotonnes of oil equivalents) for OECD countries in 2016.");
+
+      // Width and height
+      var w = 1200;
+      var h = 400;
+      var barPadding = 5;
+      var margin = 20;
+
+      var svg = d3.select("body")
+            .append("svg")
+            .attr("width", w)
+            .attr("height", h);
+
+      d3.json("data.json").then(function(data){
+        goodData = parser(data)
+        console.log(goodData)
+        var max = Math.max(...goodData[1])
+        var barWidth = (w - 2 * margin) / goodData[0].length
+        console.log(max)
+        rects = svg.selectAll("rect")
+            .data(goodData[1])
+            .enter()
+            .append("rect")
+        rects.attr("x", function(d, i) {
+              return i * barWidth + margin;
+            })
+            .attr("y", function(d){
+              return (h - margin) * (1 - d / max);
+            })
+            .attr("width", barWidth - barPadding)
+            .attr("height", function(d){
+              return d / max * (h - margin);
+            });
+        texts = svg.selectAll("text")
+            .data(goodData[0])
+            .enter()
+            .append("text")
+            .text(function(d) {
+              return d;
+            });
+        texts.attr("x", function(d, i) {
+            return i * barWidth + margin + 0.5 * (barWidth - barPadding);
+          })
+          .attr("y", h)
+          .attr("text-anchor", "middle")
+
+      });
+
+      function parser(data) {
+        // obtain keys and actual values
+        let keys = Object.keys(data);
+        let dataValues = []
+        let valueless = []
+        keys.forEach(function(element) {
+          if (data[element].Value) {
+            dataValues.push(data[element].Value)
+          }
+          else {
+            valueless.push(keys.indexOf(element))
+          }
+        })
+        valueless.forEach(function(index){
+          keys.splice(index, 1)
+        });
+        return [keys, dataValues]
+      }
+
+    </script>
+  </body>
+</html>
