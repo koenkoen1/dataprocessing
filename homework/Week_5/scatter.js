@@ -8,67 +8,126 @@ window.onload = function() {
   let requests = [d3.json(womenInScience), d3.json(consConf)];
 
   Promise.all(requests).then(function(response) {
-    let dataset = dataParse();
-    console.log(dataset)
+    let dataset = dataParse(response);
+    console.log(dataset);
+    dataset = clean(dataset);
+    createGraph(dataset["2007"]);
   }).catch(function(e){
     throw(e);
   });
 };
 
-function dataParse() {
+function dataParse(response) {
+  // parses responsetext
   let dict = {};
   for (let i = 0; i < 2; i++) {
-    let countries = dataPoints(i)["Country"];
-    let years = dataYears(i);
+    const countries = dataPoints(response, i)["Country"];
+    const years = dataYears(response, i);
+
     for (let countryKey in response[i].dataSets[0].series) {
-      let route = response[i].dataSets[0].series[countryKey].observations;
-      let country = {};
+      const route = response[i].dataSets[0].series[countryKey].observations;
       for (let yearKey in route) {
-        country[years[yearKey]] = route[yearKey][0];
+        dict[years[yearKey]] = dict[years[yearKey]] || {};
+
+        let country
+        if (i) { country = countries[countryKey[0]] }
+        else { country = countries[countryKey[2]] };
+
+        dict[years[yearKey]][country] = dict[years[yearKey]][country] || [];
+        dict[years[yearKey]][country].push(route[yearKey][0])
       }
-      if (i) {dict[countries[countryKey[0]]].push(country)}
-      else {dict[countries[countryKey[2]]] = country};
     }
   }
   return dict;
 };
 
-function dataYears(index) {
+function dataYears(response, index) {
+  // extracts years from responsetext
   let array = [];
-  for (let key in response[index].structure.dimensions.observation[0].values) {
-    array.push(response[index].structure.dimensions.observation[0].values[key].name);
-  };
+  const route = response[index].structure.dimensions.observation[0].values;
+  for (let key in route) { array.push(route[key].name) };
   return array;
 }
 
-function dataPoints(index) {
+function dataPoints(response, index) {
+  // extracts countries from responsetext
   let dict = {};
   for (let key in response[index].structure.dimensions.series) {
     let array = [];
-    let route = response[index].structure.dimensions.series[key];
-    for (let key in route.values) {
-      array.push(route.values[key].name);
-    }
+    const route = response[index].structure.dimensions.series[key];
+    for (let key in route.values) { array.push(route.values[key].name) };
     dict[route.name] = array;
   }
   return dict;
 };
 
+function clean(dataset) {
+  // removes data with less than two values
+  const years = Object.keys(dataset);
+  years.forEach(function(year) {
+    const countries = Object.keys(dataset[year]);
+    countries.forEach(function(country) {
+      if (dataset[year][country].length < 2) { delete dataset[year][country] }
+    })
+  })
+  return dataset
+}
+
 function createGraph(dataset) {
+  const w = 1000;
+  const h = 500;
+  const margin = 20;
+
+  colours = ['#7fc97f','#beaed4','#fdc086','#ffff99','#386cb0','#f0027f']
+
   let svg = d3.select("body")
             .append("svg")
             .attr("width", w)
             .attr("height", h);
 
+  let data = [];
+  let xData = [];
+  let yData = [];
+  const countries = Object.keys(dataset)
+  let i = 0;
+  countries.forEach(function(country) {
+    // saving x- and y-data separately for easy making of scales
+    xData.push(dataset[country][0]);
+    yData.push(dataset[country][1]);
+
+    dataset[country].push(i);
+    data.push(dataset[country]);
+    i++;
+  });
+  console.log(data);
+
+  // create scales for the data
+  let yScale = d3.scaleLinear()
+            .domain([Math.min(...yData), Math.max(...yData)])
+            .range([h - margin, margin])
+            .nice()
+  let xScale = d3.scaleLinear()
+            .domain([Math.min(...xData), Math.max(...xData)])
+            .range([2 * margin, w - margin])
+            .nice()
+  let yAxis = d3.axisLeft(yScale)
+  let xAxis = d3.axisBottom(xScale)
+
   svg.selectAll("circle")
-     .data(dataset)
+     .data(data)
      .enter()
      .append("circle")
-     .attr("cx", function(d) {
-        return d[0];
-     })
-     .attr("cy", function(d) {
-          return d[1];
-     })
-     .attr("r", 5);
+     .attr("cx", function(d) { return xScale(d[0]) })
+     .attr("cy", function(d) { return yScale(d[1]) })
+     .attr("r", 5)
+     .attr("fill", function(d) { return colours[d[2]] })
+
+  svg.append("g")
+     .attr("class", "axis")
+     .attr("transform", "translate(" + (2 * margin) + ",0)")
+     .call(yAxis);
+  svg.append("g")
+     .attr("class", "axis")
+     .attr("transform", "translate(0," + (h - margin) + ")")
+     .call(xAxis);
 }
