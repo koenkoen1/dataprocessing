@@ -20,22 +20,29 @@ window.onload = function() {
   });
 };
 
+// parses responsetext
 function dataParse(response) {
-  // parses responsetext
   let dict = {};
+
+  // parses both datasets
   for (let i = 0; i < 2; i++) {
+    // gets the names of the countries and years
     const countries = dataPoints(response, i)["Country"];
     const years = dataYears(response, i);
 
+    // iterates over evey country in the datasets
     for (let countryKey in response[i].dataSets[0].series) {
       const route = response[i].dataSets[0].series[countryKey].observations;
-      for (let yearKey in route) {
-        dict[years[yearKey]] = dict[years[yearKey]] || {};
 
+      //iterates over every year in the datasets
+      for (let yearKey in route) {
+        // the country is saved at different indexes between the datasets
         let country
         if (i) { country = countries[countryKey[0]] }
         else { country = countries[countryKey[2]] };
 
+        // adds the value of each dataset together into a list in an object
+        dict[years[yearKey]] = dict[years[yearKey]] || {};
         dict[years[yearKey]][country] = dict[years[yearKey]][country] || [];
         dict[years[yearKey]][country].push(route[yearKey][0])
       }
@@ -44,16 +51,16 @@ function dataParse(response) {
   return dict;
 };
 
+// extracts years from responsetext
 function dataYears(response, index) {
-  // extracts years from responsetext
   let array = [];
   const route = response[index].structure.dimensions.observation[0].values;
   for (let key in route) { array.push(route[key].name) };
   return array;
 }
 
+// extracts countries from responsetext
 function dataPoints(response, index) {
-  // extracts countries from responsetext
   let dict = {};
   for (let key in response[index].structure.dimensions.series) {
     let array = [];
@@ -64,8 +71,8 @@ function dataPoints(response, index) {
   return dict;
 };
 
+// removes data with less than two values
 function clean(dataset) {
-  // removes data with less than two values
   const years = Object.keys(dataset);
   years.forEach(function(year) {
     const countries = Object.keys(dataset[year]);
@@ -77,25 +84,31 @@ function clean(dataset) {
 }
 
 function createGraph(dataset) {
+  // removes previous graph if any, so there is space for a new one
   d3.selectAll("svg")
       .remove();
 
+  // height, width and margin
   const w = 1000;
   const h = 500;
   const margin = 30;
 
+  // initializes a svg
   let svg = d3.select("body")
             .append("svg")
             .attr("width", w)
             .attr("height", h);
 
+  // adds graphtitle to svg
   svg.append("text")
      .attr("transform", "translate(" + (w/2) + ", 12)")
      .style("text-anchor", "middle")
      .text("customer confidence vs. percentage of women in science");
 
+  // different colours for different data
   let colours = ['#7fc97f','#beaed4','#fdc086','#ffff99','#386cb0','#f0027f']
 
+  // basically parsing the dataset again as the previous parse did not work here
   let data = [];
   let xData = [];
   let yData = [];
@@ -110,7 +123,7 @@ function createGraph(dataset) {
     data.push(dataVal);
   });
 
-  // create scales for the data
+  // creates scales for the data
   let yScale = d3.scaleLinear()
             .domain([Math.min(...yData), Math.max(...yData)])
             .range([h - margin, margin])
@@ -122,6 +135,7 @@ function createGraph(dataset) {
   let yAxis = d3.axisLeft(yScale)
   let xAxis = d3.axisBottom(xScale)
 
+  // fill the scatterplot with dots
   svg.selectAll("circle")
      .data(data)
      .enter()
@@ -134,6 +148,7 @@ function createGraph(dataset) {
        return colours[data.indexOf(d)]
      })
 
+  // adds axes
   svg.append("g")
      .attr("class", "axis")
      .attr("transform", "translate(" + (2 * margin) + ",0)")
@@ -143,6 +158,7 @@ function createGraph(dataset) {
      .attr("transform", "translate(0," + (h - margin) + ")")
      .call(xAxis);
 
+  // adds axes labels
   svg.append("text")
      .attr("transform", "translate(" + (w/2) + "," + (h-5) + ")")
      .style("text-anchor", "middle")
@@ -155,6 +171,7 @@ function createGraph(dataset) {
      .style("text-anchor", "middle")
      .text("Customer confidence index");
 
+  // initializes legend
   let legend = svg.append("g")
      .attr("class", "legend")
      .attr("x", w - 65)
@@ -162,6 +179,7 @@ function createGraph(dataset) {
      .attr("height", 100)
      .attr("width", 65);
 
+  // adds colours to the legend
   legend.selectAll('rect')
         .data(data)
         .enter()
@@ -174,6 +192,7 @@ function createGraph(dataset) {
           return colours[data.indexOf(d)];
         });
 
+  // adds country names to legend
   legend.selectAll('text')
         .data(data)
         .enter()
