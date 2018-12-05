@@ -9,9 +9,12 @@ window.onload = function() {
 
   Promise.all(requests).then(function(response) {
     let dataset = dataParse(response);
-    console.log(dataset);
     dataset = clean(dataset);
     createGraph(dataset["2007"]);
+    document.getElementById("year").onchange=function() {
+      var year = this.value
+      createGraph(dataset[year])
+    }
   }).catch(function(e){
     throw(e);
   });
@@ -74,16 +77,24 @@ function clean(dataset) {
 }
 
 function createGraph(dataset) {
+  d3.selectAll("svg")
+      .remove();
+
   const w = 1000;
   const h = 500;
-  const margin = 20;
-
-  colours = ['#7fc97f','#beaed4','#fdc086','#ffff99','#386cb0','#f0027f']
+  const margin = 30;
 
   let svg = d3.select("body")
             .append("svg")
             .attr("width", w)
             .attr("height", h);
+
+  svg.append("text")
+     .attr("transform", "translate(" + (w/2) + ", 12)")
+     .style("text-anchor", "middle")
+     .text("customer confidence vs. percentage of women in science");
+
+  let colours = ['#7fc97f','#beaed4','#fdc086','#ffff99','#386cb0','#f0027f']
 
   let data = [];
   let xData = [];
@@ -95,11 +106,9 @@ function createGraph(dataset) {
     xData.push(dataset[country][0]);
     yData.push(dataset[country][1]);
 
-    dataset[country].push(i);
-    data.push(dataset[country]);
-    i++;
+    let dataVal = [dataset[country][0], dataset[country][1], country];
+    data.push(dataVal);
   });
-  console.log(data);
 
   // create scales for the data
   let yScale = d3.scaleLinear()
@@ -117,10 +126,13 @@ function createGraph(dataset) {
      .data(data)
      .enter()
      .append("circle")
+     .attr("class", "circle")
      .attr("cx", function(d) { return xScale(d[0]) })
      .attr("cy", function(d) { return yScale(d[1]) })
      .attr("r", 5)
-     .attr("fill", function(d) { return colours[d[2]] })
+     .attr("fill", function(d) {
+       return colours[data.indexOf(d)]
+     })
 
   svg.append("g")
      .attr("class", "axis")
@@ -130,4 +142,45 @@ function createGraph(dataset) {
      .attr("class", "axis")
      .attr("transform", "translate(0," + (h - margin) + ")")
      .call(xAxis);
+
+  svg.append("text")
+     .attr("transform", "translate(" + (w/2) + "," + (h-5) + ")")
+     .style("text-anchor", "middle")
+     .text("percent of women in science");
+  svg.append("text")
+     .attr("transform", "rotate(-90)")
+     .attr("y", 0)
+     .attr("x",0 - (h/2))
+     .attr("dy", "1em")
+     .style("text-anchor", "middle")
+     .text("Customer confidence index");
+
+  let legend = svg.append("g")
+     .attr("class", "legend")
+     .attr("x", w - 65)
+     .attr("y", margin)
+     .attr("height", 100)
+     .attr("width", 65);
+
+  legend.selectAll('rect')
+        .data(data)
+        .enter()
+        .append("rect")
+        .attr("x", w - 125)
+        .attr("y", function(d, i){ return i *  20;})
+        .attr("width", 10)
+        .attr("height", 10)
+        .style("fill", function(d) {
+          return colours[data.indexOf(d)];
+        });
+
+  legend.selectAll('text')
+        .data(data)
+        .enter()
+        .append("text")
+        .attr("x", w - 110)
+        .attr("y", function(d, i){ return 10 + i *  20;})
+        .text(function(d) {
+          return d[2];
+        });
 }
