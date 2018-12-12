@@ -5,8 +5,12 @@ interactive views
 */
 window.onload = function() {
   d3.json("prunedData.json").then(function(data) {
-    parsedData = dataParse(data);
+    let parsedData = dataParse(data);
+    console.log(parsedData);
     createBarGraph(parsedData);
+    let reparsedData = calenderParse(parsedData);
+    console.log(reparsedData["North America"]);
+    createCalender(reparsedData["North America"]);
   })
 }
 
@@ -63,6 +67,7 @@ function createBarGraph(data) {
       .data(newData)
       .enter()
       .append("rect")
+      .attr("class", "bar")
       .attr("x", function(d) { return xScale(d.x); })
       .attr("y", function(d){ return yScale(d.y); })
       .attr("width", xScale.bandwidth)
@@ -94,6 +99,83 @@ function createBarGraph(data) {
       .text("amount of terrorist strikes");
 }
 
-function createCalender(data) {
+function calenderParse(data) {
+  countries = Object.keys(data);
+  parsedData = {}
+  countries.forEach(function(country) {
+    let prevDate = new Date();
+    let value = [];
+    let values = [];
+    for (key in data[country]) {
+      const brief = data[country][key]
+      let newDate = new Date(brief["year"], brief["month"] - 1, brief["day"])
+      if (prevDate.getTime() === newDate.getTime()) {
+        value[1] = value[1] + 1;
+      }
+      else {
+        values.push(value);
+        value = [newDate, 1];
+        prevDate = newDate;
+      };
+    };
+    values.splice(0, 1)
+    parsedData[country] = values;
+  });
+  return parsedData
+}
 
+function createCalender(data) {
+  const w = 964;
+  const cellSize = 17;
+  const h = cellSize * 9;
+
+  const years = d3.nest()
+      .key(d => d[0].getFullYear())
+    .entries(data)
+    .reverse();
+
+  console.log(years)
+
+  // initializes a svg
+  let svg = d3.select("body")
+            .append("svg")
+            .attr("class", "calenderGraph")
+            .attr("width", w)
+            .attr("height", (h * years.length));
+
+  let year = svg.selectAll("g")
+          .data(years)
+          .enter()
+          .append("g")
+          .attr("transform", function(d, i) {
+            return "translate(40, " + (h * i + 1.5 * cellSize) + ")";
+          });
+
+  year.append("text")
+      .attr("x", -5)
+      .attr("y", -5)
+      .attr("font-weight", "bold")
+      .attr("text-anchor", "end")
+      .text(function(d) { return d.key; });
+
+  year.append("g")
+      .attr("text-anchor", "end")
+    .selectAll("text")
+    .data(d3.range(7).map(i => new Date(1995, 0, i)))
+    .enter().append("text")
+      .attr("x", -5)
+      .attr("y", d => (d.getDay() + 0.8) * cellSize)
+      .text(d => "SMTWTFS"[d.getDay()]);
+
+  year.append("g")
+    .selectAll("rect")
+    .data(function(d) { return d.values})
+    .enter().append("rect")
+      .attr("width", cellSize - 1)
+      .attr("height", cellSize - 1)
+      .attr("x", d => d3.timeMonday.count(d3.timeYear(d[0]), d[0]) * cellSize + 0.5)
+      .attr("y", d => d[0].getDay() * cellSize)
+      .attr("fill", "darkred")
+    .append("title")
+      .text(function(d) { return "" + d[0] + d[1]});
 }

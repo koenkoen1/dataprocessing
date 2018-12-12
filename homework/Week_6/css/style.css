@@ -1,6 +1,6 @@
-rect {
+.bar {
   fill: darkblue;
 }
-rect:hover {
+.bar:hover {
   fill: blue;
 }
