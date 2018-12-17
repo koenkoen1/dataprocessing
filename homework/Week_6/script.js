@@ -243,8 +243,5 @@ function calenderUpdate(data) {
           .attr("fill", "darkred")
         .append("title")
           .text(function(d) { return "Terrorist attacks: " + d[1] + " Date: " + d[0].toLocaleDateString(); })
-
   }
-
-
 }
